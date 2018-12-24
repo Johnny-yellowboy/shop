@@ -6,7 +6,7 @@
       <el-input v-model="form.username"></el-input>
     </el-form-item>
     <el-form-item label="密码"  prop="password">
-      <el-input v-model="form.password" type="password" ></el-input>
+      <el-input v-model="form.password" type="password"  @keyup.enter.native="logintoo('form')"></el-input>
     </el-form-item>
   <el-form-item>
     <el-button type="primary" @click="login('form')">登录</el-button>
@@ -46,11 +46,9 @@ export default {
       this.$refs[formName].validate((valid) => {
         if (valid) {
           axios({
-
             method: 'post',
             url: 'http://localhost:8888/api/private/v1/login',
             data: this.form
-
           }).then(res => {
             console.log(res.data)
             if (res.data.meta.status === 200) {
@@ -60,7 +58,7 @@ export default {
                 type: 'success'
               })
               // 储存token
-              localStorage.setItem('login', res.data.data.token)
+              localStorage.setItem('loginToken', res.data.data.token)
               // 跳转home首页
               this.$router.push('/home')
             } else {
@@ -76,12 +74,15 @@ export default {
           return false
         }
       })
+    },
+    logintoo (formName) {
+      this.login(formName)
     }
   }
 }
 </script>
 
-<style  lang="less">
+<style  lang="less" scoped>
   .login{
     height: 100%;
     background-color: #135975;
