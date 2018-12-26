@@ -34,7 +34,7 @@
             size="small"
             @click="delUser(scope.row.id)"
           ></el-button>
-          <el-button type="success" icon="el-icon-check" plain size="small">分配角色</el-button>
+          <el-button type="success" icon="el-icon-check" plain size="small" @click="showAssignDialog(scope.row)">分配角色</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -90,11 +90,32 @@
         <el-button type="primary" @click="EditUsers">确 定</el-button>
       </span>
     </el-dialog>
+    <!-- 分配角色模态框 -->
+    <el-dialog title="修改用户" :visible.sync="AssignDialogVisible" width="40%">
+      <el-form :model="AssignFrom" status-icon :rules="rules" ref="AssignFrom" label-width="100px">
+        <el-form-item label="用户名" prop="username">
+          <el-tag type="info">{{AssignFrom.username}}</el-tag>
+        </el-form-item>
+        <el-form-item label="角色列表">
+          <el-select v-model="AssignFrom.rid" placeholder="请选择">
+            <el-option
+              v-for="item in roleList"
+              :key="item.id"
+              :label="item.roleName"
+              :value="item.id">
+            </el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <span slot="footer">
+        <el-button @click="AssignDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="AssignRole">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import axios from 'axios'
 export default {
   data () {
     return {
@@ -132,27 +153,31 @@ export default {
         mobile: [
           { pattern: /^1\d{10}$/, message: '请输入正确的手机号', trigger: 'change' }
         ]
-      }
+      },
+      AssignDialogVisible: false,
+      AssignFrom: {
+        username: '',
+        rid: '',
+        id: ''
+      },
+      roleList: []
     }
   },
   methods: {
     getList () {
-      axios({
+      this.axios({
         method: 'get',
-        url: 'http://localhost:8888/api/private/v1/users',
+        url: 'users',
         params: {
           query: this.query,
           pagenum: this.currtPage,
           pagesize: this.pageSize
-        },
-        headers: {
-          Authorization: localStorage.getItem('loginToken')
         }
       }).then(res => {
         // console.log(res.data)
-        if (res.data.meta.status === 200) {
-          this.userList = res.data.data.users
-          this.total = res.data.data.total
+        if (res.meta.status === 200) {
+          this.userList = res.data.users
+          this.total = res.data.total
         }
       })
     },
@@ -171,21 +196,18 @@ export default {
     },
     delUser (id) {
       console.log(id)
-      this.$confirm('你确定要删除该用户吗>', '温馨提示', {
+      this.$confirm('你确定要删除该用户吗?', '温馨提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       })
         .then(() => {
-          axios({
+          this.axios({
             method: 'delete',
-            url: `http://localhost:8888/api/private/v1/users/${id}`,
-            headers: {
-              Authorization: localStorage.getItem('loginToken')
-            }
+            url: `users/${id}`
           }).then(res => {
             console.log(res.data)
-            if (res.data.meta.status === 200) {
+            if (res.meta.status === 200) {
               if (this.userList.length <= 1 && this.currtPage > 1) {
                 this.currtPage--
               }
@@ -206,14 +228,14 @@ export default {
     },
     changeState (user) {
       console.log(user)
-      axios({
+      this.axios({
         method: 'put',
         url: `http://localhost:8888/api/private/v1/users/${user.id}/state/${user.mg_state}`,
         headers: {
           Authorization: localStorage.getItem('loginToken')
         }
       }).then(res => {
-        if (res.data.meta.status === 200) {
+        if (res.meta.status === 200) {
           this.$message.success('修改状态成功')
         } else {
           this.$message.error('修改状态失败')
@@ -226,18 +248,15 @@ export default {
     AddUsers () {
       this.$refs.AddForm.validate(vaild => {
         if (!vaild) return false
-        // 发送axios
+        // 发送this.axios
         console.log(this.AddForm)
-        axios({
+        this.axios({
           method: 'post',
-          url: 'http://localhost:8888/api/private/v1/users',
-          data: this.AddForm,
-          headers: {
-            Authorization: localStorage.getItem('loginToken')
-          }
+          url: 'users',
+          data: this.AddForm
         }).then(res => {
-          console.log(res.data)
-          let status = res.data.meta.status
+          console.log(res)
+          let status = res.meta.status
           if (status === 201) {
             this.total++
             this.currtPage = Math.ceil(this.total / this.pageSize)
@@ -265,15 +284,12 @@ export default {
       // 先校验表单内容,否则随便都能提交
       this.$refs.editFrom.validate(vaild => {
         if (!vaild) return false
-        axios({
+        this.axios({
           method: 'put',
-          url: `http://localhost:8888/api/private/v1/users/${this.editFrom.id}`,
-          data: this.editFrom,
-          headers: {
-            Authorization: localStorage.getItem('loginToken')
-          }
+          url: `users/${this.editFrom.id}`,
+          data: this.editFrom
         }).then(res => {
-          if (res.data.meta.status === 200) {
+          if (res.meta.status === 200) {
             this.editDialogVisible = false
             this.$refs.editFrom.resetFields()
             this.getList()
@@ -283,6 +299,48 @@ export default {
           }
         })
       })
+    },
+    async Getuserinfo (id) {
+      let res = await this.axios.get(`users/${id}`)
+      console.log(res)
+      if (res.meta.status === 200) {
+        let rid = res.data.rid
+        if (rid === -1) {
+          rid = ''
+        }
+        this.AssignFrom.rid = rid
+      }
+    },
+    async showAssignDialog (user) {
+      // console.log(user)
+      this.AssignDialogVisible = true
+      this.AssignFrom.username = user.username
+      this.AssignFrom.id = user.id
+      // 发送ajax，根据用户id查询角色id
+      this.Getuserinfo(user.id)
+      // 3. 获取角色列表
+      let res = await this.axios.get('roles')
+      // console.log(res)
+      if (res.meta.status === 200) {
+        this.roleList = res.data
+        // console.log(this.roleList)
+      }
+    },
+    async AssignRole () {
+      if (!this.AssignFrom.rid) {
+        this.$message.error('请选择一个角色')
+        return
+      }
+      let res = await this.axios.put(`users/${this.AssignFrom.id}/role`, {
+        rid: this.AssignFrom.rid
+      })
+      // console.log(res)
+      if (res.meta.status === 200) {
+        this.AssignDialogVisible = false
+        this.$refs.AssignFrom.resetFields()
+        this.getList()
+        this.$message.success('设置角色成功')
+      }
     }
   },
   created () {
@@ -292,10 +350,6 @@ export default {
 </script>
 
 <style lang="less" scoped>
-.el-breadcrumb {
-  height: 50px;
-  line-height: 50px;
-}
 .search {
   width: 350px;
   margin-bottom: 10px;

@@ -17,8 +17,7 @@
 </template>
 
 <script>
-// 导入axios
-import axios from 'axios'
+// 导入this.axios
 export default {
   data  () {
     return {
@@ -45,26 +44,26 @@ export default {
     login (formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
-          axios({
+          this.axios({
             method: 'post',
-            url: 'http://localhost:8888/api/private/v1/login',
+            url: 'login',
             data: this.form
           }).then(res => {
-            console.log(res.data)
-            if (res.data.meta.status === 200) {
+            // console.log(res)
+            if (res.meta.status === 200) {
               this.$message({
                 showClose: true,
                 message: '恭喜你，登录成功',
                 type: 'success'
               })
               // 储存token
-              localStorage.setItem('loginToken', res.data.data.token)
+              localStorage.setItem('loginToken', res.data.token)
               // 跳转home首页
               this.$router.push('/home')
             } else {
               this.$message({
                 showClose: true,
-                message: res.data.meta.msg,
+                message: res.meta.msg,
                 type: 'error',
                 duration: 2000
               })

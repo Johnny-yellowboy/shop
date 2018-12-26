@@ -12,76 +12,24 @@
     </el-header>
     <el-container>
       <el-aside width="200px">
+        <!-- element是否开启导航模式:router -->
         <el-menu
-          default-active="2"
+          default-active="$route.path.slice(1)"
           class="el-menu-vertical-demo"
-          @open="handleOpen"
-          @close="handleClose"
           background-color="#545c64"
           text-color="#fff"
           unique-opened
+          router
           active-text-color="#ffd04b">
-          <el-submenu index="1">
+          <el-submenu v-for="menu in menuList" :key="menu.id" :index="menu.path">
             <template slot="title">
               <i class="el-icon-location"></i>
-              <span>用户管理</span>
+              <span>{{menu.authName}}</span>
             </template>
-              <el-menu-item index="1-1">
+              <el-menu-item v-for="item in menu.children" :key="item.id" :index="item.path">
                   <i class="el-icon-menu"></i>
-                  <span slot="title" @click="user">用户列表</span>
+                  <span slot="title">{{item.authName}}</span>
               </el-menu-item>
-          </el-submenu>
-          <el-submenu index="3">
-            <template slot="title">
-              <i class="el-icon-location"></i>
-              <span>权限管理</span>
-            </template>
-                <el-menu-item index="3-1">
-                    <i class="el-icon-menu"></i>
-                    <span slot="title">角色列表</span>
-                </el-menu-item>
-                <el-menu-item index="3-2">
-                    <i class="el-icon-menu"></i>
-                    <span slot="title">权限列表</span>
-                </el-menu-item>
-          </el-submenu>
-          <el-submenu index="4">
-            <template slot="title">
-              <i class="el-icon-location"></i>
-              <span>商品管理</span>
-            </template>
-                <el-menu-item index="4-1">
-                    <i class="el-icon-menu"></i>
-                    <span slot="title">商品列表</span>
-                </el-menu-item>
-                <el-menu-item index="4-2">
-                    <i class="el-icon-menu"></i>
-                    <span slot="title">分类参数</span>
-                </el-menu-item>
-                <el-menu-item index="4-3">
-                    <i class="el-icon-menu"></i>
-                    <span slot="title">商品分类</span>
-                </el-menu-item>
-          </el-submenu>
-          <el-submenu index="5">
-            <template slot="title">
-              <i class="el-icon-location"></i>
-              <span>订单管理</span>
-            </template>
-                <el-menu-item index="5-1">
-                    <i class="el-icon-menu"></i>
-                    <span slot="title">订单列表</span>
-                </el-menu-item>
-          </el-submenu>
-          <el-submenu index="6">
-            <template slot="title">
-              <i class="el-icon-location"></i>
-              <span>数据统计</span>
-            </template>
-                  <el-menu-item index="5-1">
-                      <i class="el-icon-menu"></i>
-                      <span slot="title">数据列表</span>
-                  </el-menu-item>
           </el-submenu>
         </el-menu>
       </el-aside>
@@ -94,13 +42,12 @@
 
 <script>
 export default {
+  data () {
+    return {
+      menuList: []
+    }
+  },
   methods: {
-    handleOpen (key, keyPath) {
-      console.log(key, keyPath)
-    },
-    handleClose (key, keyPath) {
-      console.log(key, keyPath)
-    },
     open2 () {
       this.$confirm('你确定要退出吗?', '提示', {
         confirmButtonText: '确定',
@@ -121,9 +68,19 @@ export default {
         })
       })
     },
-    user () {
-      this.$router.push('/user')
+    async GetMenus () {
+      let res = await this.axios.get('menus')
+      // console.log(res)
+      if (res.meta.status === 200) {
+        this.menuList = res.data
+      }
     }
+    // user () {
+    //   this.$router.push('/user')
+    // }
+  },
+  created () {
+    this.GetMenus()
   }
 }
 </script>

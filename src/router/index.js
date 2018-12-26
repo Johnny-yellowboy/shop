@@ -2,7 +2,11 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import Login from '@/components/Login'
 import Home from '@/components/Home'
-import User from '@/components/User'
+import Users from '@/components/users/Users'
+import Roles from '@/components/rights/Roles'
+import Rights from '@/components/rights/Rights'
+import Categories from '@/components/categories/Categories'
+
 Vue.use(Router)
 
 const router = new Router({
@@ -20,10 +24,20 @@ const router = new Router({
       component: Home,
       children: [
         {
-          // 当 /user/:id/posts 匹配成功
-          // UserPosts 会被渲染在 User 的 <router-view> 中
-          path: '/user',
-          component: User
+          path: '/users',
+          component: Users
+        },
+        {
+          path: '/roles',
+          component: Roles
+        },
+        {
+          path: '/rights',
+          component: Rights
+        },
+        {
+          path: '/categories',
+          component: Categories
         }
       ]
     }
@@ -39,7 +53,7 @@ router.beforeEach((to, from, next) => {
   }
 
   let token = localStorage.getItem('loginToken')
-  console.log(token)
+  // console.log(token)
   if (token) {
     next()
   } else {
